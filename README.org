@@ -1,0 +1,52 @@
+#+title: corefighter.el
+
+[[https://travis-ci.org/akirak/corefighter.el.svg?branch=master][Travis Status]]
+
+Core Fighter (=corefighter.el=) is a dashboard that sits beside an Emacs frame. It is a sidebar that displays links to dashboards. It is designed to be extensible by adding modules. 
+
+* Features
+- Extensiblity: 
+* Prerequisites
+- Emacs 25.1
+- page-break-lines
+* Configuration
+** Modules
+A module in Core Fighter is a subclass of =corefighter-module=. 
+
+To enable a module, add it to =corefighter-modules= variable. The variable is an alist whose car is a symbol which represents the class of the module and cdr is a plist used to initialize an instance. To update the configuration, take either of the following steps:
+
+- Set it using the customization interface.
+- Set the variable and call =corefighter-load-modules= function.
+*** Preconfigured modules
+**** org-agenda-custom-commands
+=corefighter-org-agenda= module displays a list of custom agenda commands.
+*** Writing your own module
+To define a new module, create a class inherited from =corefighter-module=. The class must satisfy the following constraints:
+
+- Initialize =title= slot, which is a string to represent the name of the module.
+- Implement a generic method =corefighter-module-items=. It should take an optional boolean argument to represent if items should be reloaded.
+
+An example is =corefighter-org-agenda=. As it is based on an object-oriented system of EIEIO, also refer to [[https://www.gnu.org/software/emacs/manual/html_node/eieio/][its documentation]].
+* Usage
+Run =corefighter-sidebar= to pop up a sidebar window.
+** Keybindings inside the sidebar
+The following keybindgs are available in the sidebar buffer:
+
+- ~n~/~p~ to go to the next/previous link
+- ~RET~ to follow the link, and ~SPC~ to open the link but remain in the sidebar window
+- ~TAB~/~S-TAB~ to go to the next/previous section
+- ~g~ to refresh
+- ~q~ to close the window
+* Comparisons
+** [[https://github.com/rakanalh/emacs-dashboard/][Dashboard]]
+- Dashboard is a buffer displayed in a normal Emacs window. Core Fighter is a sidebar.
+- While Dashboard allows you to freely layout individual sections (called widgets), the main dashboard application is less aware of its contents. Core Fighter is based on a list-oriented model of modules, so modules are more introspective.
+** [[https://github.com/djcb/sauron][Sauron]]
+Sauron is a background application to keep track of events in Emacs. In theory, Core Fighter can support features similar to Sauron by updating items in the background by watching external stuffs. Or maybe a Sauron module can be added to Core Fighter.
+
+*** TODO Make Core Fighter more like Sauron
+The following is a list of features to add to make Core Fighter compete with Sauron:
+
+- [ ] Manage notifications
+- [ ] A pop-up window to display urgent items/modules
+- [ ] Integration with [[https://github.com/jwiegley/alert][alert]]
