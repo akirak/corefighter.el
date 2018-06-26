@@ -5,7 +5,7 @@ PACKAGE_LISP          := corefighter.el corefighter-sidebar.el
 
 # override defaults
 PACKAGE_ARCHIVES      := gnu melpa
-PACKAGE_TESTS         := test-sample.el # normally, EMake would discover these in the test/ directory
+# PACKAGE_TESTS         := test-sample.el # normally, EMake would discover these in the test/ directory
 PACKAGE_TEST_DEPS     := dash
 PACKAGE_TEST_ARCHIVES := gnu melpa
 
@@ -13,7 +13,8 @@ PACKAGE_TEST_ARCHIVES := gnu melpa
 
 .DEFAULT_GOAL: help
 
-test: test-ert test-buttercup   ## run tests
+# test: test-ert test-buttercup   ## run tests
+test:
 lint: lint-package-lint lint-checkdoc ## run lints
 
 emake.mk:                       ## download the emake Makefile
