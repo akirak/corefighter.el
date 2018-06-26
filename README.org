@@ -52,3 +52,5 @@ The following is a list of features to add to make Core Fighter compete with Sau
 - [ ] Manage notifications
 - [ ] A pop-up window to display urgent items/modules
 - [ ] Integration with [[https://github.com/jwiegley/alert][alert]]
+** [[https://common.yoke.io/][Yoke.io]]
+Yoke.io is a web application that displays statuses of a bunch of external services. The module model of Core Fighter is analogous to the card model of Yoke.io. Core Fighter wishes to become Yoke.io for Emacs.
