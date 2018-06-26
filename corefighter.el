@@ -63,7 +63,9 @@ a list of options passed when the module is instantiated."
   :group 'corefighter
   :set (lambda (key value)
          (set key value)
-         (corefighter-load-modules)))
+         ;; This function can't be run during initialization
+         (when (featurep 'corefighter)
+           (corefighter-load-modules))))
 
 ;;;;; Variables for the sidebar
 (defconst corefighter-sidebar-buffer "*corefighter sidebar*")
@@ -133,6 +135,7 @@ a list of options passed when the module is instantiated."
            when (same-class-p obj class)
            return obj))
 
+;;;###autoload
 (defun corefighter-load-modules ()
   "Reload modules based on the configuration in `corefighter-modules'."
   (interactive)
