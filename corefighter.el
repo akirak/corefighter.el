@@ -133,7 +133,6 @@ a list of options passed when the module is instantiated."
            when (same-class-p obj class)
            return obj))
 
-;;;###autoload
 (defun corefighter-load-modules ()
   "Reload modules based on the configuration in `corefighter-modules'."
   (interactive)
