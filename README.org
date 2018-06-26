@@ -12,13 +12,39 @@ Core Fighter (=corefighter.el=) is a dashboard that sits beside an Emacs frame. 
 - Emacs 25.1
 - page-break-lines
 * Configuration
+An example configuration with =use-package= (and [[https://github.com/raxod502/straight.el][straight.el]]) is:
+
+#+begin_src emacs-lisp
+  (use-package corefighter
+    ;; If you use straight.el
+    :straight (corefighter :host github :repo "akirak/corefighter.el")
+    :commands (corefighter-sidebar)
+    :config
+    ;; Configure the module list
+    (setq corefighter-modules
+          '((corefighter-org-agenda)))
+    (corefighter-load-modules))
+#+end_src
+
+If you don't use =use-package=, you probably can configure it like this:
+
+#+begin_src emacs-lisp
+  (autoload 'corefighter-sidebar "corefighter")
+  (setq corefighter-modules
+        '((corefighter-org-agenda)))
+  (with-eval-after-load 'corefighter
+    (corefighter-load-modules))
+#+end_src
+
+That is, you have to set =corefighter-modules= variable properly (which is described in the subsequent subsection) and then call =(corefighter-load-modules)= after that.
+
 ** Modules
 A module in Core Fighter is a subclass of =corefighter-module=. 
 
-To enable a module, add it to =corefighter-modules= variable. The variable is an alist whose car is a symbol which represents the class of the module and cdr is a plist used to initialize an instance. To update the configuration, take either of the following steps:
+To enable a module, add it to =corefighter-modules= variable. The variable is an alist whose item takes a form =(SYMBOL . PLIST)=, where =SYMBOL= is a symbol which represents the class of the module, and =PLIST= is a list of options passed to initialize an instance of the class.
 
-- Set it using the customization interface.
-- Set the variable and call =corefighter-load-modules= function.
+Don't forget to call =corefighter-load-modules= after setting the variable.
+
 *** Preconfigured modules
 **** org-agenda-custom-commands
 =corefighter-org-agenda= module displays a list of custom agenda commands.
