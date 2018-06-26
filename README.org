@@ -1,6 +1,6 @@
 #+title: corefighter.el
 
-[[https://travis-ci.org/akirak/corefighter.el.svg?branch=master][Travis Status]]
+[[https://travis-ci.org/akirak/corefighter.el.svg?branch=master]]
 
 Core Fighter (=corefighter.el=) is a dashboard that sits beside an Emacs frame. It is a sidebar that displays links to dashboards. It is designed to be extensible by adding modules. 
 
