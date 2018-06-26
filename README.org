@@ -32,9 +32,9 @@ Run =corefighter-sidebar= to pop up a sidebar window.
 ** Keybindings inside the sidebar
 The following keybindgs are available in the sidebar buffer:
 
-- ~n~/~p~ to go to the next/previous link
+- ~n~ / ~p~ to go to the next/previous link
 - ~RET~ to follow the link, and ~SPC~ to open the link but remain in the sidebar window
-- ~TAB~/~S-TAB~ to go to the next/previous section
+- ~TAB~ / ~S-TAB~ to go to the next/previous section
 - ~g~ to refresh
 - ~q~ to close the window
 * Comparisons
