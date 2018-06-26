@@ -107,8 +107,7 @@ a list of options passed when the module is instantiated."
 (defface corefighter-sidebar-section-title
   '((t (:weight bold)))
   "Face for section titles."
-  :group 'corefighter
-  :inherit 'variable-pitch)
+  :group 'corefighter)
 
 ;;;; Classes
 ;;;;; Items
