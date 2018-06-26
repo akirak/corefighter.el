@@ -1,7 +1,6 @@
 # EMACS_VERSION should be set in your ~/.profile on your development machine
 EMAKE_SHA1            := 4208a5e4e68c0e13ecd57195209bdeaf5959395f
 PACKAGE_BASENAME      := corefighter
-PACKAGE_LISP          := corefighter.el corefighter-sidebar.el
 
 # override defaults
 PACKAGE_ARCHIVES      := gnu melpa
