@@ -257,8 +257,8 @@ When FORCE is non-nil, force reloading items."
 
 If ARG is non-nil, force reloading items of each module."
   (interactive "P")
-  (unless (derived-mode-p 'corefighter-sidebar-mode)
-    (user-error "Not in the mode"))
+  (unless (get-buffer corefighter-sidebar-buffer)
+    (user-error "There is no sidebar buffer"))
   (message "Refreshing the sidebar...")
   (corefighter-sidebar--init arg)
   (message nil))
