@@ -264,33 +264,54 @@ If ARG is non-nil, force reloading items of each module."
   (message nil))
 
 (defun corefighter-sidebar--run-action (action &optional action-window)
-  "Run ACTION with the window focus taken into an account."
-  ;; Because some commands (e.g. org-agenda) take care of windows by themselves,
-  ;; this workaround related to window management is needed.
+  "Run ACTION with ACTION-WINDOW taken into an account.
+
+ACTION-WINDOW should denote how the action manages the window.
+Because some commands (e.g. org-agenda) take care of windows by
+themselves, this workaround related to window management is needed.
+
++ If the action is an org-agenda command, it should take a form
+  \"(org-agenda-window-setup . SETUP)\" where SETUP is the value of
+  `org-agenda-window-setup'.
+
++ If the action displays a buffer in other-window, the value should be
+  \"other-window\".
+
++ Otherwise, action should switch to a buffer in the current window."
+  ;; TODO: Support magit properly. If `corefighter-target-window-setup'
+  ;; is 'only, the option doesn't take effect.
   (pcase action-window
     ((and `(org-agenda-window-setup . ,window-setup)
           (guard (not (eq window-setup 'current-window))))
      (cl-case window-setup
        ;; ('current-window ) ; skipped by the parent condition
-       ('other-window (cl-case corefighter-target-window-setup
-                        ('only (let ((orig-window (selected-window)))
-                                 (mapc #'delete-window
-                                       (cdr (corefighter--other-windows)))
-                                 ;; It seems that the window focus is changed
-                                 ;; by delete-window, so re-select the original
-                                 ;; window.
-                                 (select-window orig-window)
-                                 (funcall action)))
-                        (otherwise (funcall action))))
+       ('other-window (progn
+                        (corefighter--prepare-other-window)
+                        (funcall action)))
        ;; TODO: Test if this works
        ('only-window (let ((org-agenda-window-setup 'reorganize-frame))
                        (funcall action)))
        ('reorganize-frame (funcall action))
        ('other-frame (funcall action))))
+    ('other-window
+     (progn
+       (corefighter--prepare-other-window)
+       (funcall action)))
     (_
      (progn
        (corefighter--prepare-target-window)
        (funcall action)))))
+
+(defun corefighter--prepare-other-window ()
+  "Prepare the window for switching the buffer in other-window."
+  (cl-case corefighter-target-window-setup
+    (only (let ((orig-window (selected-window)))
+            (mapc #'delete-window
+                  (cdr (corefighter--other-windows)))
+            ;; It seems that the window focus is changed
+            ;; by delete-window, so re-select the original
+            ;; window.
+            (select-window orig-window)))))
 
 (defun corefighter-sidebar-follow-link (&optional pos)
   "Follow a link at POS."
