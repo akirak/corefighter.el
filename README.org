@@ -48,13 +48,15 @@ Don't forget to call =corefighter-load-modules= after setting the variable.
 *** Preconfigured modules
 **** org-agenda-custom-commands
 =corefighter-org-agenda= module displays a list of custom agenda commands.
+**** Extra modules
+[[https://github.com/akirak/corefighter-extras][corefighter-extras]] repository contains extra modules that require additional dependencies.
 *** Writing your own module
 To define a new module, create a class inherited from =corefighter-module=. The class must satisfy the following constraints:
 
 - Initialize =title= slot, which is a string to represent the name of the module.
 - Implement a generic method =corefighter-module-items=. It should take an optional boolean argument to represent if items should be reloaded.
 
-An example is =corefighter-org-agenda=. As it is based on an object-oriented system of EIEIO, also refer to [[https://www.gnu.org/software/emacs/manual/html_node/eieio/][its documentation]].
+An example is =corefighter-org-agenda=. As it is based on an object-oriented system of EIEIO, also refer to [[https://www.gnu.org/software/emacs/manual/html_node/eieio/][its documentation]]. [[https://github.com/akirak/corefighter-extras][corefighter-extras]] also provides examples written by the author of this package.
 * Usage
 Run =corefighter-sidebar= to pop up a sidebar window.
 ** Keybindings inside the sidebar
