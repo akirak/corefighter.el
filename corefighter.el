@@ -296,9 +296,9 @@ If ARG is non-nil, force reloading items of each module."
   "Follow a link at POS."
   (interactive)
   (when-let ((pos (or pos (point)))
-             (action (get-char-property pos 'follow-action))
-             (action-window (get-char-property pos 'action-window)))
-    (corefighter-sidebar--run-action action action-window)
+             (action (get-char-property pos 'follow-action)))
+    (corefighter-sidebar--run-action action
+                                     (get-char-property pos 'action-window))
     action))
 
 (defun corefighter-sidebar-preview ()
