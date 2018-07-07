@@ -64,6 +64,7 @@ The following keybindgs are available in the sidebar buffer:
 - ~RET~ to follow the link, and ~SPC~ to open the link but remain in the sidebar window
 - ~TAB~ / ~S-TAB~ to go to the next/previous section
 - ~g~ to refresh
+  - With a prefix, ~g~ reloads items in all modules.
 - ~q~ to close the window
 * Comparisons
 ** [[https://github.com/rakanalh/emacs-dashboard/][Dashboard]]
