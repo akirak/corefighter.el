@@ -31,7 +31,7 @@
 ;;; Code:
 
 (require 'eieio)
-(require 'seq)
+;; (require 'seq)
 (require 'cl-lib)
 (require 'dash)
 (require 'ov)
@@ -127,7 +127,7 @@ a list of options passed when the module is instantiated."
 
 (cl-defgeneric corefighter-module-urgent-p ((obj corefighter-module))
   "t if the module is urgent."
-  (seq-find #'corefighter-item-urgency (corefighter-module-items obj)))
+  (-find #'corefighter-item-urgency (corefighter-module-items obj)))
 
 ;;;; Loading modules
 (defun corefighter--find-instance (class)
