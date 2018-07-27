@@ -69,6 +69,11 @@ a list of options passed when the module is instantiated."
          (when (featurep 'corefighter)
            (corefighter-load-modules))))
 
+(defcustom corefighter-hide-empty-sections t
+  "In the sidebar, hide sections that contain no items."
+  :type 'boolean
+  :group 'corefighter)
+
 ;;;;; Variables for the sidebar
 (defconst corefighter-sidebar-buffer "*corefighter sidebar*")
 
@@ -219,35 +224,37 @@ When FORCE is non-nil, force reloading items."
                           corefighter-module-instances))
             section-begin)
         (dolist (section-data data)
-          (insert corefighter-sidebar-section-separator)
           (let-alist section-data
-            (setq section-begin (point))
-            (insert (propertize .title
-                                'face 'corefighter-sidebar-section-title)
-                    "\n\n")
-            (dolist (item .items)
-              (insert (propertize (concat
-                                   (if (corefighter-item-urgency item)
-                                       corefighter-urgency-text
-                                     "")
-                                   (if-let ((key (corefighter-item-key item)))
-                                       (format "[%s] " (propertize key 'face 'bold))
-                                     "")
-                                   (corefighter-item-title item))
-                                  'button t
-                                  'follow-link t
-                                  'mouse-face 'highlight
-                                  'help-echo (corefighter-item-description item)
-                                  'action #'corefighter-sidebar-follow-link
-                                  'action-window
-                                  (corefighter-item-action-window item)
-                                  'follow-action
-                                  `(lambda ()
-                                     ,(corefighter-item-action item)))
-                      "\n"))
-            (ov-set (ov-make section-begin (point))
-                    ;; TODO: Add a section-local keymap to access items
-                    'corefighter-module .class)))))
+            (unless (and corefighter-hide-empty-sections
+                         (null .items))
+              (insert corefighter-sidebar-section-separator)
+              (setq section-begin (point))
+              (insert (propertize .title
+                                  'face 'corefighter-sidebar-section-title)
+                      "\n\n")
+              (dolist (item .items)
+                (insert (propertize (concat
+                                     (if (corefighter-item-urgency item)
+                                         corefighter-urgency-text
+                                       "")
+                                     (if-let ((key (corefighter-item-key item)))
+                                         (format "[%s] " (propertize key 'face 'bold))
+                                       "")
+                                     (corefighter-item-title item))
+                                    'button t
+                                    'follow-link t
+                                    'mouse-face 'highlight
+                                    'help-echo (corefighter-item-description item)
+                                    'action #'corefighter-sidebar-follow-link
+                                    'action-window
+                                    (corefighter-item-action-window item)
+                                    'follow-action
+                                    `(lambda ()
+                                       ,(corefighter-item-action item)))
+                        "\n"))
+              (ov-set (ov-make section-begin (point))
+                      ;; TODO: Add a section-local keymap to access items
+                      'corefighter-module .class))))))
     (goto-char (point-min))
     (current-buffer)))
 
