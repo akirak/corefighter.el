@@ -11,6 +11,8 @@ Core Fighter (=corefighter.el=) is a dashboard that sits beside an Emacs frame. 
 * Prerequisites
 - Emacs 25.1
 - page-break-lines
+- dash.el
+- ov.el
 * Configuration
 An example configuration with =use-package= (and [[https://github.com/raxod502/straight.el][straight.el]]) is:
 
