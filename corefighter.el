@@ -42,6 +42,7 @@
   (defvar org-agenda-window-setup))
 
 (defvar corefighter-module-instances nil)
+(defvar corefighter-last-data nil)
 
 (defcustom corefighter-urgency-text "! "
   "Indicator for items that has the urgency status."
@@ -154,7 +155,8 @@ a list of options passed when the module is instantiated."
                           (push obj new)
                         (push (apply #'make-instance class-symbol options) new))))
       (error (message "Error while loading a module: %s" err)))
-    (setq corefighter-module-instances (nreverse new))))
+    (setq corefighter-module-instances (nreverse new))
+    (setq corefighter-last-data nil)))
 
 ;;;; Helper functions
 (defun corefighter--prepare-target-window ()
@@ -217,11 +219,7 @@ When FORCE is non-nil, force reloading items."
       (erase-buffer)
       (remove-overlays)
       (corefighter-sidebar-mode)
-      (let ((data (mapcar (lambda (module)
-                            `((class . ,(eieio-object-class module))
-                              (title . ,(oref module title))
-                              (items . ,(corefighter-module-items module force))))
-                          corefighter-module-instances))
+      (let ((data (corefighter--get-data force))
             section-begin)
         (dolist (section-data data)
           (let-alist section-data
@@ -257,6 +255,17 @@ When FORCE is non-nil, force reloading items."
                       'corefighter-module .class))))))
     (goto-char (point-min))
     (current-buffer)))
+
+(defun corefighter--get-data (&optional refresh)
+  "Retrieve data of the current modules.
+
+If REFRESH is non-nil, force refreshing all modules."
+  (setq corefighter-last-data
+        (mapcar (lambda (module)
+                  `((class . ,(eieio-object-class module))
+                    (title . ,(oref module title))
+                    (items . ,(corefighter-module-items module refresh))))
+                corefighter-module-instances)))
 
 ;;;;; Commands in the buffer
 (defun corefighter-sidebar-refresh (&optional arg)
