@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 1.0-pre
-;; Package-Requires: ((emacs "25.1") (page-break-lines "0"))
+;; Package-Requires: ((emacs "25.1") (page-break-lines "0") (dash "2.12") (ov "1.0.6"))
 ;; URL: https://github.com/akirak/corefighter.el
 
 ;; This file is not part of GNU Emacs.
@@ -33,6 +33,8 @@
 (require 'eieio)
 (require 'seq)
 (require 'cl-lib)
+(require 'dash)
+(require 'ov)
 
 ;;;; Variables
 ;; Declare variables to prevent undefined variable errors
@@ -243,11 +245,9 @@ When FORCE is non-nil, force reloading items."
                                   `(lambda ()
                                      ,(corefighter-item-action item)))
                       "\n"))
-            (let ((section-end (point)))
-              ;; TODO: Add a section-local keymap to access items
-              (cl-loop for (prop . value) in `((corefighter-module . ,.class))
-                       do (put-text-property section-begin section-end prop value)))
-            (insert "\n")))))
+            (ov-set (ov-make section-begin (point))
+                    ;; TODO: Add a section-local keymap to access items
+                    'corefighter-module .class)))))
     (goto-char (point-min))
     (current-buffer)))
 
@@ -329,6 +329,20 @@ themselves, this workaround related to window management is needed.
     (when (corefighter-sidebar-follow-link)
       (select-window orig-window))))
 
+(defun corefighter-sidebar--goto-next-ov (prop)
+  "Jump to the next non-nil occurrence of PROP."
+  (when-let ((pos (thread-last (ov-in prop)
+                    (mapcar #'ov-beg)
+                    (-find (lambda (pos) (> pos (point)))))))
+    (goto-char pos)))
+
+(defun corefighter-sidebar--goto-previous-ov (prop)
+  "Jump to the previous non-nil occurrence of PROP."
+  (when-let ((ov (thread-last (ov-in prop)
+                   (nreverse)
+                   (-find (lambda (ov) (< (ov-end ov) (point)))))))
+    (goto-char (ov-beg ov))))
+
 (defun corefighter-sidebar--goto-next-prop (prop)
   "Jump to the next non-nil occurrence of PROP."
   (let ((start (point))
@@ -367,12 +381,12 @@ themselves, this workaround related to window management is needed.
 (defun corefighter-sidebar-next-section ()
   "Jump to the next section."
   (interactive)
-  (corefighter-sidebar--goto-next-prop 'corefighter-module))
+  (corefighter-sidebar--goto-next-ov 'corefighter-module))
 
 (defun corefighter-sidebar-previous-section ()
   "Jump to the previous section."
   (interactive)
-  (corefighter-sidebar--goto-previous-prop 'corefighter-module))
+  (corefighter-sidebar--goto-previous-ov 'corefighter-module))
 
 ;;;;; Sidebar window
 (defun corefighter-sidebar--window ()
