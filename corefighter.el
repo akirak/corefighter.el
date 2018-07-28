@@ -286,10 +286,6 @@ ACTION-WINDOW should denote how the action manages the window.
 Because some commands (e.g. org-agenda) take care of windows by
 themselves, this workaround related to window management is needed.
 
-+ If the action is an org-agenda command, it should take a form
-  \"(org-agenda-window-setup . SETUP)\" where SETUP is the value of
-  `org-agenda-window-setup'.
-
 + If the action displays a buffer in other-window, the value should be
   \"other-window\".
 
@@ -297,18 +293,6 @@ themselves, this workaround related to window management is needed.
   ;; TODO: Support magit properly. If `corefighter-target-window-setup'
   ;; is 'only, the option doesn't take effect.
   (pcase action-window
-    ((and `(org-agenda-window-setup . ,window-setup)
-          (guard (not (eq window-setup 'current-window))))
-     (cl-case window-setup
-       ;; ('current-window ) ; skipped by the parent condition
-       ('other-window (progn
-                        (corefighter--prepare-other-window)
-                        (funcall action)))
-       ;; TODO: Test if this works
-       ('only-window (let ((org-agenda-window-setup 'reorganize-frame))
-                       (funcall action)))
-       ('reorganize-frame (funcall action))
-       ('other-frame (funcall action))))
     ('other-window
      (progn
        (corefighter--prepare-other-window)
@@ -444,15 +428,14 @@ Copied from `dired-sidebar-set-width', which was originally copied from
            collect (make-corefighter-item
                     :title description
                     :key key
-                    :action-window `(org-agenda-window-setup
-                                     . ,org-agenda-window-setup)
                     :description (if (listp (car options))
                                      "block agenda"
                                    (format "%s %s"
                                            (symbol-name (car options))
                                            (nth 1 options)))
                     :urgency nil
-                    :action `(org-agenda nil ,key))))
+                    :action `(let ((org-agenda-window-setup 'current-window))
+                               (org-agenda nil ,key)))))
 
 (provide 'corefighter)
 ;;; corefighter.el ends here
