@@ -19,13 +19,23 @@ An example configuration with =use-package= (and [[https://github.com/raxod502/s
 #+begin_src emacs-lisp
   (use-package corefighter
     ;; If you use straight.el
-    :straight (corefighter :host github :repo "akirak/corefighter.el")
+    :straight (corefighter :host github
+                           :repo "akirak/corefighter.el"
+                           :files
+                           (:defaults
+                            (:exclude "helm-corefighter.el")))
     :commands (corefighter-sidebar)
     :config
     ;; Configure the module list
     (setq corefighter-modules
           '((corefighter-org-agenda)))
     (corefighter-load-modules))
+
+  ;; helm-corefighter (optional)
+  (use-package helm-corefighter
+    :straight (helm-corefighter :host github :repo "akirak/corefighter.el"
+                                :files ("helm-corefighter.el"))
+    :commands (helm-corefighter))
 #+end_src
 
 If you don't use =use-package=, you probably can configure it like this:
@@ -36,6 +46,9 @@ If you don't use =use-package=, you probably can configure it like this:
         '((corefighter-org-agenda)))
   (with-eval-after-load 'corefighter
     (corefighter-load-modules))
+
+  ;; helm-corefighter (optional)
+  (autoload 'helm-corefighter "helm-corefighter")
 #+end_src
 
 That is, you have to set =corefighter-modules= variable properly (which is described in the subsequent subsection) and then call =(corefighter-load-modules)= after that.
@@ -61,6 +74,9 @@ To define a new module, create a class inherited from =corefighter-module=. The 
 An example is =corefighter-org-agenda=. As it is based on an object-oriented system of EIEIO, also refer to [[https://www.gnu.org/software/emacs/manual/html_node/eieio/][its documentation]]. [[https://github.com/akirak/corefighter-extras][corefighter-extras]] also provides examples written by the author of this package.
 * Usage
 Run =corefighter-sidebar= to pop up a sidebar window.
+
+There is also =helm-corefighter= command, which lets you browse items via Helm. In the Helm session, you can use =helm-persistent-action= (~C-j~) to preview an item without closing Helm.
+
 ** Keybindings inside the sidebar
 The following keybindgs are available in the sidebar buffer:
 
