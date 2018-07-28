@@ -44,6 +44,7 @@
 
 (defvar helm-corefighter-target-widow nil)
 
+;;;###autoload
 (defun helm-corefighter (&optional refresh)
   "Helm that displays items in the corefighter modules.
 
