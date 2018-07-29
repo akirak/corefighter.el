@@ -79,6 +79,14 @@ a list of options passed when the module is instantiated."
   :type 'boolean
   :group 'corefighter)
 
+(defcustom corefighter-sidebar-item-prefix " "
+  "String prepended to each item in the sidebar.
+
+This can be useful both for visual presentation and for folding with
+`origami-mode'."
+  :type 'string
+  :group 'corefighter)
+
 ;;;;; Variables for the sidebar
 (defconst corefighter-sidebar-buffer "*corefighter sidebar*")
 
@@ -98,7 +106,7 @@ a list of options passed when the module is instantiated."
   :type '(choice (const left)
                  (const right)))
 
-(defcustom corefighter-sidebar-section-separator "\n\f\n"
+(defcustom corefighter-sidebar-section-separator "\n\f\n\n"
   "String used as a separator between sections."
   :group 'corefighter
   :type 'string)
@@ -245,6 +253,7 @@ When FORCE is non-nil, force reloading items."
               (setq width (max width (length .title)))
               (dolist (item .items)
                 (let ((text (concat
+                             (or corefighter-sidebar-item-prefix "")
                              (if (corefighter-item-urgency item)
                                  corefighter-urgency-text
                                "")
