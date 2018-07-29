@@ -44,6 +44,10 @@
 (defvar corefighter-module-instances nil)
 (defvar corefighter-last-data nil)
 
+(defvar corefighter-sidebar-width nil
+  "Expected width of the sidebar.")
+(make-variable-buffer-local 'corefighter-sidebar-width)
+
 (defcustom corefighter-urgency-text "! "
   "Indicator for items that has the urgency status."
   :type 'string
@@ -78,8 +82,13 @@ a list of options passed when the module is instantiated."
 ;;;;; Variables for the sidebar
 (defconst corefighter-sidebar-buffer "*corefighter sidebar*")
 
+(defcustom corefighter-sidebar-min-width 0
+  "Minimum width of the sidebar."
+  :group 'corefighter
+  :type 'integer)
+
 (defcustom corefighter-sidebar-max-width 40
-  "Maximal width of the sidebar."
+  "Maximum width of the sidebar."
   :group 'corefighter
   :type 'integer)
 
@@ -188,12 +197,14 @@ a list of options passed when the module is instantiated."
         (progn
           (select-window window)
           (corefighter-sidebar-refresh))
-      (pop-to-buffer (corefighter-sidebar--init)
-                     `(display-buffer-in-side-window
-                       . ((side . ,corefighter-sidebar-side)
-                          (slot . -1))))
-      (corefighter-sidebar-set-width (corefighter-sidebar--width))
-      (set-window-dedicated-p (corefighter-sidebar--window) t))))
+      (let ((buf (corefighter-sidebar--init)))
+        (pop-to-buffer buf
+                       `(display-buffer-in-side-window
+                         . ((side . ,corefighter-sidebar-side)
+                            (slot . -1))))
+        (corefighter-sidebar-set-width (with-current-buffer buf
+                                         corefighter-sidebar-width))
+        (set-window-dedicated-p (corefighter-sidebar--window) t)))))
 
 ;;;;; Mode
 (define-derived-mode corefighter-sidebar-mode special-mode "CoreFighter"
@@ -220,6 +231,7 @@ When FORCE is non-nil, force reloading items."
       (remove-overlays)
       (corefighter-sidebar-mode)
       (let ((data (corefighter--get-data force))
+            (width (or corefighter-sidebar-min-width 0))
             section-begin)
         (dolist (section-data data)
           (let-alist section-data
@@ -230,29 +242,34 @@ When FORCE is non-nil, force reloading items."
               (insert (propertize .title
                                   'face 'corefighter-sidebar-section-title)
                       "\n\n")
+              (setq width (max width (length .title)))
               (dolist (item .items)
-                (insert (propertize (concat
-                                     (if (corefighter-item-urgency item)
-                                         corefighter-urgency-text
-                                       "")
-                                     (if-let ((key (corefighter-item-key item)))
-                                         (format "[%s] " (propertize key 'face 'bold))
-                                       "")
-                                     (corefighter-item-title item))
-                                    'button t
-                                    'follow-link t
-                                    'mouse-face 'highlight
-                                    'help-echo (corefighter-item-description item)
-                                    'action #'corefighter-sidebar-follow-link
-                                    'action-window
-                                    (corefighter-item-action-window item)
-                                    'follow-action
-                                    `(lambda ()
-                                       ,(corefighter-item-action item)))
-                        "\n"))
+                (let ((text (concat
+                             (if (corefighter-item-urgency item)
+                                 corefighter-urgency-text
+                               "")
+                             (if-let ((key (corefighter-item-key item)))
+                                 (format "[%s] " (propertize key 'face 'bold))
+                               "")
+                             (corefighter-item-title item))))
+                  (setq width (max width (length text)))
+                  (insert (propertize text
+                                      'button t
+                                      'follow-link t
+                                      'mouse-face 'highlight
+                                      'help-echo (corefighter-item-description item)
+                                      'action #'corefighter-sidebar-follow-link
+                                      'action-window
+                                      (corefighter-item-action-window item)
+                                      'follow-action
+                                      `(lambda ()
+                                         ,(corefighter-item-action item)))
+                          "\n")))
               (ov-set (ov-make section-begin (point))
                       ;; TODO: Add a section-local keymap to access items
-                      'corefighter-module .class))))))
+                      'corefighter-module .class))))
+        (setq corefighter-sidebar-width
+              (min width corefighter-sidebar-max-width))))
     (goto-char (point-min))
     (current-buffer)))
 
@@ -392,11 +409,6 @@ themselves, this workaround related to window management is needed.
 (defun corefighter-sidebar--window ()
   "Get the sidebar window if any."
   (get-buffer-window corefighter-sidebar-buffer))
-
-(defun corefighter-sidebar--width ()
-  "Determine the width of the sidebar."
-  ;; FIXME
-  corefighter-sidebar-max-width)
 
 (defun corefighter-sidebar-set-width (width)
   "Set the width of the sidebar to WIDTH.
