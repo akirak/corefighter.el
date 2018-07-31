@@ -75,7 +75,7 @@ If REFRESH is non-nil, force refreshing items."
   "Execute ITEM in `helm-corefighter'."
   (let ((corefighter-target-window-setup nil))
     (with-selected-window helm-corefighter-target-window
-      (corefighter-sidebar--run-action
+      (corefighter--run-action-1
        `(lambda ()
           ,(corefighter-item-action item)
           ;; Store the buffer in case the helm session is aborted

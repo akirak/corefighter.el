@@ -36,6 +36,8 @@
 (require 'dash)
 (require 'ov)
 
+;;;; Modules and structs
+
 ;;;; Variables
 ;; Declare variables to prevent undefined variable errors
 (eval-when-compile
@@ -268,11 +270,7 @@ When FORCE is non-nil, force reloading items."
                                       'mouse-face 'highlight
                                       'help-echo (corefighter-item-description item)
                                       'action #'corefighter-sidebar-follow-link
-                                      'action-window
-                                      (corefighter-item-action-window item)
-                                      'follow-action
-                                      `(lambda ()
-                                         ,(corefighter-item-action item)))
+                                      'corefighter-item item)
                           "\n")))
               (ov-set (ov-make section-begin (point))
                       ;; TODO: Add a section-local keymap to access items
@@ -305,10 +303,11 @@ If ARG is non-nil, force reloading items of each module."
   (corefighter-sidebar--init arg)
   (message nil))
 
-(defun corefighter-sidebar--run-action (action &optional action-window)
-  "Run ACTION with ACTION-WINDOW taken into an account.
+(defun corefighter--run-action-1 (action &optional action-window)
+  "Run ACTION in ACTION-WINDOW.
 
 ACTION-WINDOW should denote how the action manages the window.
+
 Because some commands (e.g. org-agenda) take care of windows by
 themselves, this workaround related to window management is needed.
 
@@ -342,16 +341,20 @@ themselves, this workaround related to window management is needed.
 (defun corefighter-sidebar-follow-link (&optional pos)
   "Follow a link at POS."
   (interactive)
-  (when-let ((pos (or pos (point)))
-             (action (get-char-property pos 'follow-action)))
-    (corefighter-sidebar--run-action action
-                                     (get-char-property pos 'action-window))
+  (when-let
+      ((pos (or pos (point)))
+       (item (get-char-property pos 'corefighter-item))
+       (action `(lambda () ,(corefighter-item-action item))))
+    (corefighter--run-action-1 action
+                               (corefighter-item-action-window item))
+    ;; Return non-nil for `corefighter-sidebar-preview'
     action))
 
 (defun corefighter-sidebar-preview ()
   "Preview a link at the position."
   (interactive)
   (let ((orig-window (selected-window)))
+    ;; Check if an item under the cursor has an action
     (when (corefighter-sidebar-follow-link)
       (select-window orig-window))))
 
