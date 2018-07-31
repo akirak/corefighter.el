@@ -24,7 +24,13 @@ An example configuration with =use-package= (and [[https://github.com/raxod502/s
                            :files
                            (:defaults
                             (:exclude "helm-corefighter.el")))
-    :commands (corefighter-sidebar)
+    :commands (corefighter-sidebar
+               corefighter-next-item
+               corefighter-next-module
+               corefighter-first-item)
+    :init
+    (global-set-key (kbd "C-c h") #'corefighter-sidebar)
+    (global-set-key (kbd "<S-f12>") #'corefighter-next-item)
     :config
     ;; Configure the module list
     (setq corefighter-modules
@@ -76,6 +82,12 @@ An example is =corefighter-org-agenda=. As it is based on an object-oriented sys
 Run =corefighter-sidebar= to pop up a sidebar window.
 
 There is also =helm-corefighter= command, which lets you browse items via Helm. In the Helm session, you can use =helm-persistent-action= (~C-j~) to preview an item without closing Helm.
+
+You can even navigate to an item without any extra window using the following commands:
+
+- =corefighter-next-item= visits the next item or the first item in the next module (or even another module if it doesn't have an item).
+- =corefighter-next-module= visits the first item the next module.
+- =corefighter-first-item= visits the first item in all modules.
 
 ** Keybindings inside the sidebar
 The following keybindgs are available in the sidebar buffer:
