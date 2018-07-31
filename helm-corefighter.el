@@ -60,27 +60,29 @@ If REFRESH is non-nil, force refreshing items."
              (let-alist section-data
                (helm-build-sync-source .title
                  :candidates
-                 (mapcar (lambda (item)
-                           (cons (corefighter-item-title item)
-                                 item))
-                         .items)
-                 :action #'helm-corefighter--action)))
+                 (cl-loop for item being the elements of .items using (index index)
+                          collect (cons (corefighter-item-title item)
+                                        (make-corefighter-cursor :module-cursor .module
+                                                                 :item item
+                                                                 :index index)))
+                 :action #'helm-corefighter--run-cursor)))
            data)))
   ;; If a persistent action opens a buffer but helm is aborted,
   ;; switch to the buffer
   (when helm-corefighter-action-buffer
     (switch-to-buffer helm-corefighter-action-buffer)))
 
-(defun helm-corefighter--action (item)
-  "Execute ITEM in `helm-corefighter'."
-  (let ((corefighter-target-window-setup nil))
+(defun helm-corefighter--run-cursor (cursor)
+  "Execute the item referenced by CURSOR."
+  (let* ((item (corefighter-cursor-item cursor))
+         (action `(lambda ()
+                    ,(corefighter-item-action item)
+                    ;; Store the buffer in case the helm session is aborted
+                    (setq helm-corefighter-action-buffer (current-buffer))))
+         (window (corefighter-item-action-window item))
+         (corefighter-target-window-setup nil))
     (with-selected-window helm-corefighter-target-window
-      (corefighter--run-action-1
-       `(lambda ()
-          ,(corefighter-item-action item)
-          ;; Store the buffer in case the helm session is aborted
-          (setq helm-corefighter-action-buffer (current-buffer)))
-       (corefighter-item-action-window item)))))
+      (corefighter--run-action-1 action window cursor))))
 
 (provide 'helm-corefighter)
 ;;; helm-corefighter.el ends here

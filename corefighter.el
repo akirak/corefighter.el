@@ -37,6 +37,8 @@
 (require 'ov)
 
 ;;;; Modules and structs
+(cl-defstruct corefighter-module-cursor class slots)
+(cl-defstruct corefighter-cursor module-cursor item index)
 
 ;;;; Variables
 ;; Declare variables to prevent undefined variable errors
@@ -45,6 +47,8 @@
 
 (defvar corefighter-module-instances nil)
 (defvar corefighter-last-data nil)
+(defvar corefighter-last-item nil
+  "Cursor to the last visited item.")
 
 (defvar corefighter-sidebar-width nil
   "Expected width of the sidebar.")
@@ -175,7 +179,22 @@ This can be useful both for visual presentation and for folding with
                         (push (apply #'make-instance class-symbol options) new))))
       (error (message "Error while loading a module: %s" err)))
     (setq corefighter-module-instances (nreverse new))
-    (setq corefighter-last-data nil)))
+    (setq corefighter-last-data nil
+          corefighter-last-item nil)))
+
+;;;; Navigation commands
+;; These commands lets you to visit items without opening the sidebar.
+(defun corefighter-next-item ()
+  "Go to the next item of the last visited item.
+
+If there is no item visited, visit the first item."
+  (interactive)
+  )
+
+(defun corefighter-next-module ()
+  "Go to the next module of the last visited module."
+  (interactive)
+  )
 
 ;;;; Helper functions
 (defun corefighter--prepare-target-window ()
@@ -190,6 +209,15 @@ This can be useful both for visual presentation and for folding with
                   (equal (buffer-name (window-buffer window))
                          corefighter-sidebar-buffer))
                 (window-list)))
+
+;;;;; Cursors
+(defun corefighter--module-cursor (module)
+  "Return the module cursor to a MODULE instance.
+
+MODULE must be an instance of `corefighter-module'.
+ `corefighter-module-cursor' to the object."
+  (make-corefighter-module-cursor :class (object-class-name module)
+                                  :slots (object-slots module)))
 
 ;;;; Sidebar
 
@@ -253,25 +281,29 @@ When FORCE is non-nil, force reloading items."
                                   'face 'corefighter-sidebar-section-title)
                       "\n\n")
               (setq width (max width (length .title)))
-              (dolist (item .items)
-                (let ((text (concat
-                             (or corefighter-sidebar-item-prefix "")
-                             (if (corefighter-item-urgency item)
-                                 corefighter-urgency-text
-                               "")
-                             (if-let ((key (corefighter-item-key item)))
-                                 (format "[%s] " (propertize key 'face 'bold))
-                               "")
-                             (corefighter-item-title item))))
-                  (setq width (max width (length text)))
-                  (insert (propertize text
-                                      'button t
-                                      'follow-link t
-                                      'mouse-face 'highlight
-                                      'help-echo (corefighter-item-description item)
-                                      'action #'corefighter-sidebar-follow-link
-                                      'corefighter-item item)
-                          "\n")))
+              (cl-loop for item being the elements of .items using (index index)
+                       do (let ((text (concat
+                                       (or corefighter-sidebar-item-prefix "")
+                                       (if (corefighter-item-urgency item)
+                                           corefighter-urgency-text
+                                         "")
+                                       (if-let ((key (corefighter-item-key item)))
+                                           (format "[%s] " (propertize key 'face 'bold))
+                                         "")
+                                       (corefighter-item-title item)))
+                                (cursor (make-corefighter-cursor :module-cursor .module
+                                                                 :item item
+                                                                 :index index)))
+                            (setq width (max width (length text)))
+                            (insert (propertize text
+                                                'button t
+                                                'follow-link t
+                                                'mouse-face 'highlight
+                                                'help-echo (corefighter-item-description item)
+                                                'action #'corefighter-sidebar-follow-link
+                                                'corefighter-item-cursor cursor
+                                                'corefighter-item item)
+                                    "\n")))
               (ov-set (ov-make section-begin (point))
                       ;; TODO: Add a section-local keymap to access items
                       'corefighter-module .class))))
@@ -288,6 +320,7 @@ If REFRESH is non-nil, force refreshing all modules."
         (mapcar (lambda (module)
                   `((class . ,(eieio-object-class module))
                     (title . ,(oref module title))
+                    (module . ,(corefighter--module-cursor module))
                     (items . ,(corefighter-module-items module refresh))))
                 corefighter-module-instances)))
 
@@ -303,8 +336,8 @@ If ARG is non-nil, force reloading items of each module."
   (corefighter-sidebar--init arg)
   (message nil))
 
-(defun corefighter--run-action-1 (action &optional action-window)
-  "Run ACTION in ACTION-WINDOW.
+(defun corefighter--run-action-1 (action &optional action-window cursor)
+  "Run ACTION in ACTION-WINDOW with CURSOR.
 
 ACTION-WINDOW should denote how the action manages the window.
 
@@ -314,18 +347,23 @@ themselves, this workaround related to window management is needed.
 + If the action displays a buffer in other-window, the value should be
   \"other-window\".
 
-+ Otherwise, action should switch to a buffer in the current window."
++ Otherwise, action should switch to a buffer in the current window.
+
+CURSOR is an instance of `corefighter-cursor' type.  If it is
+specified, it is stored in `corefighter-last-item' variable so that
+`corefighter-next-item' command works.
+
+ACTION is returned.
+"
   ;; TODO: Support magit properly. If `corefighter-target-window-setup'
   ;; is 'only, the option doesn't take effect.
   (pcase action-window
-    ('other-window
-     (progn
-       (corefighter--prepare-other-window)
-       (funcall action)))
-    (_
-     (progn
-       (corefighter--prepare-target-window)
-       (funcall action)))))
+    ('other-window (corefighter--prepare-other-window))
+    (_ (corefighter--prepare-target-window)))
+  (funcall action)
+  (setq corefighter-last-item cursor)
+  ;; Return non-nil for use in commands like `corefighter-sidebar-preview'
+  action)
 
 (defun corefighter--prepare-other-window ()
   "Prepare the window for switching the buffer in other-window."
@@ -343,12 +381,12 @@ themselves, this workaround related to window management is needed.
   (interactive)
   (when-let
       ((pos (or pos (point)))
-       (item (get-char-property pos 'corefighter-item))
+       (cursor (get-char-property pos 'corefighter-item-cursor))
+       (item (corefighter-cursor-item cursor))
        (action `(lambda () ,(corefighter-item-action item))))
     (corefighter--run-action-1 action
-                               (corefighter-item-action-window item))
-    ;; Return non-nil for `corefighter-sidebar-preview'
-    action))
+                               (corefighter-item-action-window item)
+                               cursor)))
 
 (defun corefighter-sidebar-preview ()
   "Preview a link at the position."
