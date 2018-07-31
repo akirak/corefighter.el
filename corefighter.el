@@ -350,15 +350,15 @@ If there is no item visited, visit the first item."
 
 MODULE must be an instance of `corefighter-module'.
  `corefighter-module-cursor' to the object."
-  (make-corefighter-module-cursor :class (eieio-object-class-name module)
-                                  :slots (eieio-object-slots module)))
+  (make-corefighter-module-cursor
+   :class (eieio-object-class-name module)
+   :slots (cl-loop for slot in (eieio-class-slots (eieio-object-class module))
+                   collect (cons slot (slot-value module
+                                                  (eieio-slot-descriptor-name slot))))))
 
 (defun corefighter--test-module-cursor (module-cursor module)
   "Test if MODULE-CURSOR points to MODULE."
-  (and (eq (eieio-object-class-name module)
-           (corefighter-module-cursor-class module-cursor))
-       (equal (eieio-object-slots module)
-              (corefighter-module-cursor-slots module-cursor))))
+  (equal module-cursor (corefighter--module-cursor module)))
 
 ;;;; Sidebar
 
