@@ -33,6 +33,7 @@
 (require 'eieio)
 ;; (require 'seq)
 (require 'cl-lib)
+(require 'cl-seq)
 (require 'dash)
 (require 'ov)
 
@@ -290,14 +291,14 @@ If there is no item visited, visit the first item."
   "Return module instances after the module by MODULE-CURSOR."
   (let ((module-cursor (or module-cursor
                            (corefighter-cursor-module-cursor corefighter-last-item))))
-    (cdr (member-if (lambda (module)
-                      (corefighter--test-module-cursor module-cursor module))
-                    corefighter-module-instances))))
+    (cdr (cl-member-if (lambda (module)
+                         (corefighter--test-module-cursor module-cursor module))
+                       corefighter-module-instances))))
 
 (defun corefighter--first-item ()
   "Get the first item in all modules."
   ;; FIXME: Implement
-  (let ((modules (copy-list corefighter-module-instances))
+  (let ((modules (cl-copy-list corefighter-module-instances))
         module)
     (catch 'return
       (while (setq module (pop modules))
