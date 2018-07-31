@@ -2,12 +2,12 @@
 
 [[https://travis-ci.org/akirak/corefighter.el.svg?branch=master]]
 
-Core Fighter (=corefighter.el=) is a dashboard that sits beside an Emacs frame. It is a sidebar that displays links to dashboards. It is designed to be extensible by adding modules. 
+Core Fighter (=corefighter.el=) lets you choose the next action in Emacs. With properly configured modules, it fetches information from external sources and arrange tasks for you.
 
 * Features
-- A dashboard as a sidebar: You can preview items without closing the dashboard window
-- List-oriented: Each module is a feed that provides links to items
+- Multiple interfaces: Sidebar, helm, and no window
 - Extensibility through modules
+- List-oriented: Each module is a feed that provides links to items
 * Prerequisites
 - Emacs 25.1
 - page-break-lines
