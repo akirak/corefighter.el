@@ -47,8 +47,17 @@
 
 (defvar corefighter-module-instances nil)
 (defvar corefighter-last-data nil)
+
 (defvar corefighter-last-item nil
   "Cursor to the last visited item.")
+
+;; `corefighter-item-history` can't replace `corefighter-last-item'.
+;; That is, the first item of the former is not always the same as
+;; the latter.
+;; This is because the latter variable is nil if the last action
+;; was not executed with a cursor.
+(defvar corefighter-item-history nil
+  "List of cursors to visited items.")
 
 (defvar corefighter-sidebar-width nil
   "Expected width of the sidebar.")
@@ -477,6 +486,8 @@ ACTION is returned.
     (_ (corefighter--prepare-target-window)))
   (funcall action)
   (setq corefighter-last-item cursor)
+  (when cursor
+    (push cursor corefighter-item-history))
   ;; Return non-nil for use in commands like `corefighter-sidebar-preview'
   action)
 
