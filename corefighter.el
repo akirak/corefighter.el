@@ -161,8 +161,19 @@ and this value is non-nil, visit the first item in all modues."
 
 ;;;; Classes
 ;;;;; Items
-(cl-defstruct corefighter-item title urgency description key
-              action action-window)
+(cl-defstruct corefighter-item
+  ;; String (required)
+  title
+  ;; A short description string
+  description
+  ;; Key (string) to access the item
+  key
+  ;; S-expression (not lambda but a list)
+  action
+  ;; Symbol or nil. See `corefighter--run-action-1'
+  action-window
+  ;; Urgency (not implemented)
+  urgency)
 
 ;;;;; Modules
 (defclass corefighter-module ()
