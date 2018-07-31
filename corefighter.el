@@ -184,17 +184,119 @@ This can be useful both for visual presentation and for folding with
 
 ;;;; Navigation commands
 ;; These commands lets you to visit items without opening the sidebar.
+;;;###autoload
 (defun corefighter-next-item ()
   "Go to the next item of the last visited item.
 
 If there is no item visited, visit the first item."
   (interactive)
-  )
+  (if-let ((cursor (corefighter--next-item)))
+      (corefighter--run-cursor cursor)
+    (message "No remaining item")))
 
+(defun corefighter--run-cursor (cursor)
+  "Run the action of an item in CURSOR normally."
+  (let* ((item (corefighter-cursor-item cursor))
+         (window (corefighter-item-action-window item))
+         (action `(lambda () ,(corefighter-item-action item))))
+    (corefighter--run-action-1 action window cursor)))
+
+(cl-defun corefighter--next-item (&key (allow-other-module t)
+                                       (allow-first-item t))
+  "Get a cursor to the next item based on the stored cursor."
+  (cond
+   (corefighter-last-item
+    (or (corefighter--next-item-same-module)
+        (and allow-other-module
+             (corefighter--next-module-item))))
+   (allow-first-item
+    (corefighter--first-item))))
+
+(defun corefighter--next-item-same-module ()
+  "Get the next item in the same module."
+  (unless corefighter-last-item
+    (error "No last item"))
+  (let* ((cursor corefighter-last-item)
+         (last-item (corefighter-cursor-item cursor))
+         (module-cursor (corefighter-cursor-module-cursor cursor))
+         (module (corefighter--module-by-cursor module-cursor))
+         (new-items (corefighter-module-items module))
+         (key (corefighter-item-key last-item))
+         (new-index (if-let ((index (or (and key
+                                             (-find-index
+                                              (lambda (item)
+                                                (equal key
+                                                       (corefighter-item-key item)))
+                                              new-items))
+                                        (-find-index
+                                         (lambda (item)
+                                           (corefighter--compare-items item last-item))
+                                         new-items))))
+                        (1+ index)
+                      (corefighter-cursor-index cursor)))
+         (new-item (nth new-index new-items)))
+    (when new-item
+      (make-corefighter-cursor :module-cursor module-cursor
+                               :item new-item
+                               :index new-index))))
+
+(defun corefighter--module-by-cursor (module-cursor)
+  "Get a module instance pointed by MODULE-CURSOR."
+  (-find (lambda (module)
+           (corefighter--test-module-cursor module-cursor module))
+         corefighter-module-instances))
+
+(defun corefighter--next-module-item ()
+  "Get the first item in the next module."
+  (let ((modules (corefighter--next-modules))
+        module)
+    (catch 'return
+      (while (setq module (pop modules))
+        (when-let ((item (corefighter--module-first-item module)))
+          (throw 'return item))))))
+
+(defun corefighter--module-first-item (module)
+  "Return the first item in MODULE as a cursor."
+  (when-let ((items (corefighter-module-items module)))
+    (make-corefighter-cursor
+     :module-cursor
+     (corefighter--module-cursor module)
+     :item (car items)
+     :index 0)))
+
+(defun corefighter--next-modules (&optional module-cursor)
+  "Return module instances after the module by MODULE-CURSOR."
+  (let ((module-cursor (or module-cursor
+                           (corefighter-cursor-module-cursor corefighter-last-item))))
+    (cdr (member-if (lambda (module)
+                      (corefighter--test-module-cursor module-cursor module))
+                    corefighter-module-instances))))
+
+(defun corefighter--first-item ()
+  "Get the first item in all modules."
+  ;; FIXME: Implement
+  (let ((modules (copy-list corefighter-module-instances))
+        module)
+    (catch 'return
+      (while (setq module (pop modules))
+        (when-let ((item (corefighter--module-first-item module)))
+          (throw 'return item))))))
+
+;;;###autoload
 (defun corefighter-next-module ()
-  "Go to the next module of the last visited module."
+  "Visit the first item in the next module of the last visited item."
   (interactive)
-  )
+  (if-let ((cursor (corefighter--next-module-item)))
+      (corefighter--run-cursor cursor)
+    (message "No item in the following modules")))
+
+;;;###autoload
+(defun corefighter-first-item ()
+  "Visit the first item in all modules."
+  (interactive)
+  (if-let ((cursor (corefighter--first-item)))
+      (corefighter--run-cursor cursor)
+    (message "No item in the following modules")))
 
 ;;;; Helper functions
 (defun corefighter--prepare-target-window ()
@@ -210,6 +312,12 @@ If there is no item visited, visit the first item."
                          corefighter-sidebar-buffer))
                 (window-list)))
 
+(defun corefighter--compare-items (item1 item2)
+  "Compare two objects of `corefighter-item' type."
+  ;; Use the action to compare two items
+  (equal (corefighter-item-action item1)
+         (corefighter-item-action item2)))
+
 ;;;;; Cursors
 (defun corefighter--module-cursor (module)
   "Return the module cursor to a MODULE instance.
@@ -218,6 +326,13 @@ MODULE must be an instance of `corefighter-module'.
  `corefighter-module-cursor' to the object."
   (make-corefighter-module-cursor :class (object-class-name module)
                                   :slots (object-slots module)))
+
+(defun corefighter--test-module-cursor (module-cursor module)
+  "Test if MODULE-CURSOR points to MODULE."
+  (and (eq (object-class-name module)
+           (corefighter-module-cursor-class module-cursor))
+       (equal (object-slots module)
+              (corefighter-module-cursor-slots module-cursor))))
 
 ;;;; Sidebar
 
