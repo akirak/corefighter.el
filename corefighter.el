@@ -102,6 +102,15 @@ This can be useful both for visual presentation and for folding with
   :type 'string
   :group 'corefighter)
 
+(defcustom corefighter-cycle-modules t
+  "Visit the first item of all modules if there is no module left.
+
+This affects the behaviors of `corefighter-next-item' and
+`corefighter-next-module'.  If there is no item in succeeding modules
+and this value is non-nil, visit the first item in all modues."
+  :type 'boolean
+  :group 'corefighter)
+
 ;;;;; Variables for the sidebar
 (defconst corefighter-sidebar-buffer "*corefighter sidebar*")
 
@@ -199,7 +208,11 @@ This can be useful both for visual presentation and for folding with
 
 If there is no item visited, visit the first item."
   (interactive)
-  (if-let ((cursor (corefighter--next-item)))
+  (if-let ((cursor (or (corefighter--next-item)
+                       (and corefighter-cycle-modules
+                            (progn
+                              (message "No item remaining. Cycling to the first module...")
+                              (corefighter--first-item))))))
       (corefighter--run-cursor cursor)
     (message "No remaining item")))
 
@@ -295,7 +308,11 @@ If there is no item visited, visit the first item."
 (defun corefighter-next-module ()
   "Visit the first item in the next module of the last visited item."
   (interactive)
-  (if-let ((cursor (corefighter--next-module-item)))
+  (if-let ((cursor (or (corefighter--next-module-item)
+                       (if corefighter-cycle-modules
+                           (progn
+                             (message "No item remaining. Cycling to the first module...")
+                             (corefighter--first-item))))))
       (corefighter--run-cursor cursor)
     (message "No item in the following modules")))
 
