@@ -172,6 +172,11 @@ and this value is non-nil, visit the first item in all modues."
   action
   ;; Symbol or nil. See `corefighter--run-action-1'
   action-window
+  ;; Emacs encoded time
+  due
+  ;; Due is only date (boolean)
+  ;; Correspond to all-day events in Google Calendar
+  only-date
   ;; Urgency (not implemented)
   urgency)
 
