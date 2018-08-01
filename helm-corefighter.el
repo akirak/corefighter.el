@@ -38,11 +38,36 @@
 
 (require 'helm)
 (require 'corefighter)
+;;;; Variables
 
 (defvar helm-corefighter-action-buffer nil
   "Store the buffer selected by a (persistent) action.")
 
 (defvar helm-corefighter-target-widow nil)
+
+;;;; Faces
+;; TODO: Define faces
+(defface helm-corefighter-future-face
+  nil
+  "Face for future (scheduled after the next midnight) items.")
+(defface helm-corefighter-scheduled-face
+  nil
+  "Face for items scheduled at a particular time on today.")
+(defface helm-corefighter-unscheduled-face
+  nil
+  "Face for items scheduled at some time on today.")
+(defface helm-corefighter-overdue-face
+  '((t (:color "red")))
+  "Face for items scheduled before the last midnight.")
+
+;;;; Sources
+
+(defvar helm-corefighter-agenda-source
+  (helm-build-sync-source "Agenda"
+    :candidates #'helm-corefighter--agenda-candidates
+    :action #'helm-corefighter--run-cursor))
+
+;;;; Main
 
 ;;;###autoload
 (defun helm-corefighter (&optional refresh)
@@ -83,6 +108,39 @@ If REFRESH is non-nil, force refreshing items."
          (corefighter-target-window-setup nil))
     (with-selected-window helm-corefighter-target-window
       (corefighter--run-action-1 action window cursor))))
+
+;;;; Agenda
+
+(defun helm-corefighter-agenda (&optional refresh)
+  "Display an agenda."
+  (interactive "P")
+  (corefighter--get-data refresh)
+  (helm :prompt "corefighter agenda: "
+        :sources '(helm-corefighter-agenda-source)))
+
+(defun helm-corefighter--agenda-candidates ()
+  "Build candidates for the agenda source."
+  (cl-loop for (type . cursors) in (corefighter--partition-agenda)
+           for cursor in cursors
+           append (cons (let* ((item (corefighter-cursor-item cursor))
+                               (title (corefighter-item-title item))
+                               (module-cursor (corefighter-cursor-module-cursor cursor))
+                               (module-title (corefighter-module-cursor-title module-cursor)))
+                          (format "%-8s  %s  from %s"
+                                  (cl-case type
+                                    ('overdue (propertize "OVERDUE"
+                                                          'face 'helm-corefighter-overdue-face))
+                                    ('unscheduled (propertize "Today"
+                                                              'face 'helm-corefighter-unscheduled-face))
+                                    ('scheduled (propertize (corefighter-format-time (corefighter-item-due item) "%R")
+                                                            'face 'helm-corefighter-scheduled-face))
+                                    ('future (propertize (pcase (corefighter-due-diff-days item)
+                                                           (1 "Tomorrow")
+                                                           (n (format "in %dd" n)))
+                                                         'face 'helm-corefighter-future-face)))
+                                  title
+                                  module-title))
+                        cursor)))
 
 (provide 'helm-corefighter)
 ;;; helm-corefighter.el ends here
