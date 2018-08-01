@@ -47,7 +47,7 @@
   title)
 (cl-defstruct corefighter-cursor module-cursor item index)
 
-(cl-defstruct corefighter-time seconds only-date)
+(cl-defstruct corefighter-time seconds date-only)
 
 ;;;; Variables
 ;; Declare variables to prevent undefined variable errors
@@ -97,6 +97,12 @@ a list of options passed when the module is instantiated."
          ;; This function can't be run during initialization
          (when (featurep 'corefighter)
            (corefighter-load-modules))))
+
+(defcustom corefighter-agenda-scope 'day
+  "Time range of items to display in an agenda."
+  :type '(choice (symbol "Today" day)
+                 (integer :tag "Within N days"))
+  :group 'corefighter)
 
 (defcustom corefighter-hide-empty-sections t
   "In the sidebar, hide sections that contain no items."
@@ -375,27 +381,56 @@ If there is no item visited, visit the first item."
          (corefighter-item-action item2)))
 
 ;;;;; Time
-(cl-defgeneric corefighter-encode-time (time &optional only-date))
+(cl-defgeneric corefighter-encode-time (time &optional date-only))
 
 (cl-defmethod corefighter-encode-time ((time float)
-                                       &optional only-date)
-  (make-corefighter-time :seconds time :only-date only-date))
+                                       &optional date-only)
+  (make-corefighter-time :seconds time :date-only date-only))
 
 (cl-defmethod corefighter-encode-time ((time list)
-                                       &optional only-date)
-  (corefighter-encode-time (float-time time) only-date))
+                                       &optional  date-only)
+  (corefighter-encode-time (float-time time) date-only))
 
 (cl-defmethod corefighter-compare-times ((t1 corefighter-time)
                                          (t2 corefighter-time))
   (< (corefighter-time-seconds t1) (corefighter-time-seconds t2)))
 
+(cl-defgeneric corefighter-format-time (time &optional fmt)
+  "Format TIME with FMT.")
+
 (cl-defmethod corefighter-format-time ((time corefighter-time)
                                        &optional fmt)
   (format-time-string (cond
                        (fmt fmt)
-                       ((corefighter-time-only-date) "%F")
+                       ((corefighter-time-date-only time) "%F")
                        (t "%F %R"))
                       (corefighter-time-seconds time)))
+
+;;;;; Utilities for due time
+(cl-defgeneric corefighter--due (item))
+
+(cl-defmethod corefighter--due ((item corefighter-item))
+  (corefighter-item-due item))
+
+(cl-defmethod corefighter--due ((cursor corefighter-cursor))
+  (corefighter-item-due (corefighter-cursor-item cursor)))
+
+(cl-defgeneric corefighter-due-before (item threshold))
+
+(cl-defmethod corefighter-due-before ((item corefighter-item)
+                                      (threshold float))
+  (< (corefighter-time-float (corefighter-item-due item)) threshold))
+
+(cl-defmethod corefighter-due-before ((item corefighter-cursor)
+                                      (threshold float))
+  (corefighter-due-before (corefighter-cursor-item item) threshold))
+
+(cl-defgeneric corefighter-due-diff-days (item))
+
+(cl-defmethod corefighter-due-diff-days ((item corefighter-item))
+  (/ (- (corefighter-time-seconds (corefighter-item-due item))
+        (corefighter--midnight 0))
+     86400))
 
 ;;;;; Cursors
 (defun corefighter--module-cursor (module)
@@ -422,6 +457,69 @@ MODULE must be an instance of `corefighter-module'.
        (equal (corefighter-module-cursor-slots m1)
               (corefighter-module-cursor-slots m2))))
 
+;;;;; Utilities for agenda
+(defun corefighter--agenda-scope ()
+  "Return the float time corresponding to `corefighter-agenda-scope."
+  (pcase corefighter-agenda-scope
+    (`day (corefighter--midnight 1))
+    ((and n
+          (guard (numberp n)))
+     (corefighter--midnight n))))
+
+(defun corefighter--agenda-from (data)
+  "Build an agenda from DATA.
+
+DATA must be a list that has the same structure as
+`corefighter-last-data'.
+
+The result is a list of cursors sorted by due."
+  (->> data
+       (--map (let-alist it
+                (let ((end (corefighter--agenda-scope)))
+                  (cl-loop for item being the elements of .items using (index index)
+                           when (let ((due (corefighter-item-due item)))
+                                  (and due
+                                       (< (corefighter-time-seconds due) end)))
+                           collect (make-corefighter-cursor
+                                    :module-cursor .module
+                                    :item item
+                                    :index index)))))
+       (-flatten-n 1)
+       (-sort (-on #'corefighter-compare-times
+                   (-compose #'corefighter-item-due #'corefighter-cursor-item)))))
+
+(cl-defsubst corefighter--agenda ()
+  "Build an agenda from the last data.
+
+This function returns a list of cursors from `corefighter-last-data'."
+  (corefighter--agenda-from corefighter-last-data))
+
+(defun corefighter--midnight (day)
+  "Return the float time of the midnight after DAY days."
+  (let ((now (decode-time (current-time))))
+    (setf (nth 0 now) 0
+          (nth 1 now) 0
+          (nth 2 now) 0)
+    (+ (float-time (apply #'encode-time now))
+       (* day 86400))))
+
+(defun corefighter--partition-agenda ()
+  "Return a grouped agenda."
+  (-let* ((last-midnight (corefighter--midnight 0))
+          (next-midnight (corefighter--midnight 1))
+          ((overdue-items non-overdue) (--split-with
+                                        (corefighter-due-before it last-midnight)
+                                        (corefighter--agenda)))
+          ((today future) (--split-with
+                           (corefighter-due-before it next-midnight)
+                           non-overdue))
+          ((scheduled unscheduled) (--split-with
+                                    (corefighter-time-date-only (corefighter--due it))
+                                    today)))
+    `((overdue . ,overdue-items)
+      (unscheduled . ,unscheduled)
+      (scheduled . ,scheduled)
+      (future . ,future))))
 
 ;;;; Sidebar
 
