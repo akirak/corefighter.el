@@ -38,7 +38,13 @@
 (require 'ov)
 
 ;;;; Modules and structs
-(cl-defstruct corefighter-module-cursor class slots)
+(cl-defstruct corefighter-module-cursor
+  ;; Symbol
+  class
+  ;; A list of slot names and values
+  slots
+  ;; Optional string
+  title)
 (cl-defstruct corefighter-cursor module-cursor item index)
 
 (cl-defstruct corefighter-time seconds only-date)
@@ -398,6 +404,7 @@ If there is no item visited, visit the first item."
 MODULE must be an instance of `corefighter-module'.
  `corefighter-module-cursor' to the object."
   (make-corefighter-module-cursor
+   :title (oref module title)
    :class (eieio-object-class-name module)
    :slots (cl-loop for slot in (eieio-class-slots (eieio-object-class module))
                    collect (cons slot (slot-value module
@@ -405,7 +412,16 @@ MODULE must be an instance of `corefighter-module'.
 
 (defun corefighter--test-module-cursor (module-cursor module)
   "Test if MODULE-CURSOR points to MODULE."
-  (equal module-cursor (corefighter--module-cursor module)))
+  (corefighter--module-cursor-equal module-cursor
+                                    (corefighter--module-cursor module)))
+
+(cl-defmethod corefighter--module-cursor-equal ((m1 corefighter-module-cursor)
+                                                (m2 corefighter-module-cursor))
+  (and (eq (corefighter-module-cursor-class m1)
+           (corefighter-module-cursor-class m2))
+       (equal (corefighter-module-cursor-slots m1)
+              (corefighter-module-cursor-slots m2))))
+
 
 ;;;; Sidebar
 
