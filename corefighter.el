@@ -41,6 +41,8 @@
 (cl-defstruct corefighter-module-cursor class slots)
 (cl-defstruct corefighter-cursor module-cursor item index)
 
+(cl-defstruct corefighter-time seconds only-date)
+
 ;;;; Variables
 ;; Declare variables to prevent undefined variable errors
 (eval-when-compile
@@ -172,6 +174,8 @@ and this value is non-nil, visit the first item in all modues."
   action
   ;; Symbol or nil. See `corefighter--run-action-1'
   action-window
+  ;; Emacs encoded time
+  due
   ;; Urgency (not implemented)
   urgency)
 
@@ -363,6 +367,29 @@ If there is no item visited, visit the first item."
   ;; Use the action to compare two items
   (equal (corefighter-item-action item1)
          (corefighter-item-action item2)))
+
+;;;;; Time
+(cl-defgeneric corefighter-encode-time (time &optional only-date))
+
+(cl-defmethod corefighter-encode-time ((time float)
+                                       &optional only-date)
+  (make-corefighter-time :seconds time :only-date only-date))
+
+(cl-defmethod corefighter-encode-time ((time list)
+                                       &optional only-date)
+  (corefighter-encode-time (float-time time) only-date))
+
+(cl-defmethod corefighter-compare-times ((t1 corefighter-time)
+                                         (t2 corefighter-time))
+  (< (corefighter-time-seconds t1) (corefighter-time-seconds t2)))
+
+(cl-defmethod corefighter-format-time ((time corefighter-time)
+                                       &optional fmt)
+  (format-time-string (cond
+                       (fmt fmt)
+                       ((corefighter-time-only-date) "%F")
+                       (t "%F %R"))
+                      (corefighter-time-seconds time)))
 
 ;;;;; Cursors
 (defun corefighter--module-cursor (module)
