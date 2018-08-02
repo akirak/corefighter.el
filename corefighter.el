@@ -410,11 +410,11 @@ If there is no item visited, visit the first item."
 (cl-defgeneric corefighter-due-before (item threshold))
 
 (cl-defmethod corefighter-due-before ((item corefighter-item)
-                                      (threshold time))
+                                      (threshold float))
   (< (corefighter-time-float (corefighter-item-due item)) threshold))
 
 (cl-defmethod corefighter-due-before ((item corefighter-cursor)
-                                      (threshold time))
+                                      (threshold float))
   (corefighter-due-before (corefighter-cursor-item item) threshold))
 
 (cl-defgeneric corefighter-due-diff-days (item))
