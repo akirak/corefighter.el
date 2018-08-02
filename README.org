@@ -60,19 +60,7 @@ If you don't use =use-package=, you probably can configure it like this:
 That is, you have to set =corefighter-modules= variable properly (which is described in the subsequent subsection) and then call =(corefighter-load-modules)= after that.
 
 ** Modules
-A module in Core Fighter is a subclass of =corefighter-module=. 
-
-To enable a module, add it to =corefighter-modules= variable. The variable is an alist whose item takes a form =(SYMBOL . PLIST)=, where =SYMBOL= is a symbol which represents the class of the module, and =PLIST= is a list of options passed to initialize an instance of the class.
-
-Don't forget to call =corefighter-load-modules= after setting the variable.
-
-*** Preconfigured modules
-**** org-agenda-custom-commands
-=corefighter-org-agenda= module displays a list of custom agenda commands.
-**** Extra modules
-[[https://github.com/akirak/corefighter-extras][corefighter-extras]] repository contains extra modules that require additional dependencies.
-*** Writing your own module
-See [[https://github.com/akirak/corefighter.el/wiki/Developing-Modules][this wiki page]].
+See [[https://github.com/akirak/corefighter.el/wiki/Modules][this wiki page]].
 * Usage
 Run =corefighter-sidebar= to pop up a sidebar window.
 
