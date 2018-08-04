@@ -205,11 +205,24 @@ and this value is non-nil, visit the first item in all modues."
   (-find #'corefighter-item-urgency (corefighter-module-items obj)))
 
 ;;;; Loading modules
-(defun corefighter--find-instance (class)
-  "Find a module instance of CLASS."
-  (cl-loop for obj in corefighter-module-instances
-           when (same-class-p obj class)
-           return obj))
+(defun corefighter--find-instance (class options)
+  "Find a module instance of CLASS with OPTIONS."
+  (let ((alist (let (result key value)
+                 (while (setq key (pop options))
+                   (if (setq value (pop options))
+                       (push (cons (intern (string-remove-prefix ":" (symbol-name key)))
+                                   value)
+                             result)
+                     (error "Plist does not contain an even number of items")))
+                 (nreverse result))))
+    (cl-loop for obj in corefighter-module-instances
+             when (and (eq (eieio-object-class-name obj) class)
+                       (--all-p (let ((name (eieio-slot-descriptor-name it)))
+                                  (equal (slot-value obj name)
+                                         (alist-get name alist
+                                                    (eieio-oref-default obj name))))
+                                (eieio-class-slots (eieio-object-class obj))))
+             return obj)))
 
 ;;;###autoload
 (defun corefighter-load-modules ()
