@@ -115,6 +115,29 @@ If REFRESH is non-nil, force refreshing items."
     (with-selected-window helm-corefighter-target-window
       (corefighter--run-action-1 action window cursor))))
 
+;;;###autoload
+(defun helm-corefighter-run-module (module)
+  "Run Helm with a single module.
+
+This function is intended for prototyping.
+
+MODULE is a module for Core Fighter, e.g. an instance of a class that
+is a subclass of `corefighter-module'."
+  (setq helm-corefighter-target-window (selected-window))
+  (helm :prompt "corefighter: "
+        :sources
+        (let ((title (oref module title))
+              (items (corefighter-module-items module)))
+          (list (helm-build-sync-source title
+                  :candidates
+                  (lambda ()
+                    (cl-loop for item being the elements of items using (index index)
+                             collect (cons (corefighter-item-title item)
+                                           (make-corefighter-cursor :module-cursor module
+                                                                    :item item
+                                                                    :index index))))
+                  :action #'helm-corefighter--run-cursor)))))
+
 ;;;; Agenda
 
 (defun helm-corefighter-agenda (&optional refresh)
