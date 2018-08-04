@@ -215,14 +215,15 @@ and this value is non-nil, visit the first item in all modues."
 (defun corefighter-load-modules ()
   "Reload modules based on the configuration in `corefighter-modules'."
   (interactive)
-  (let (new class)
+  (let (new)
     (condition-case err
         (cl-loop for (class-symbol . options) in corefighter-modules
-                 do (progn
-                      (setq class (find-class class-symbol t))
-                      (if-let ((obj (corefighter--find-instance class)))
-                          (push obj new)
-                        (push (apply #'make-instance class-symbol options) new))))
+                 do (push (apply #'make-instance class-symbol options) new)
+                 ;; TODO: Use cache
+                 ;; (if-let ((obj (corefighter--find-instance class-symbol options)))
+                 ;;     (push obj new)
+                 ;;   (push (apply #'make-instance class-symbol options) new))
+                 )
       (error (message "Error while loading a module: %s" err)))
     (setq corefighter-module-instances (nreverse new))
     (setq corefighter-last-data nil
