@@ -4,7 +4,7 @@
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
 ;; Version: 1.0-pre
-;; Package-Requires: ((emacs "25.1") (page-break-lines "0") (dash "2.12") (ov "1.0.6"))
+;; Package-Requires: ((emacs "25.1") (page-break-lines "0") (dash "2.12") (dash-functional "1.2.0") (ov "1.0.6"))
 ;; URL: https://github.com/akirak/corefighter.el
 
 ;; This file is not part of GNU Emacs.
@@ -35,6 +35,7 @@
 (require 'cl-lib)
 (require 'cl-seq)
 (require 'dash)
+(require 'dash-functional)
 (require 'ov)
 
 ;;;; Modules and structs
@@ -420,7 +421,7 @@ If there is no item visited, visit the first item."
 
 (cl-defmethod corefighter-due-before ((item corefighter-item)
                                       (threshold float))
-  (< (corefighter-time-float (corefighter-item-due item)) threshold))
+  (< (corefighter-time-seconds (corefighter-item-due item)) threshold))
 
 (cl-defmethod corefighter-due-before ((item corefighter-cursor)
                                       (threshold float))
