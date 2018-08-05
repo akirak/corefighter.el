@@ -45,6 +45,11 @@
 
 (defvar helm-corefighter-target-widow nil)
 
+(defcustom helm-corefighter-prepend-agenda t
+  "Prepend the agenda source to `helm-corefighter' command."
+  :type 'boolean
+  :group 'helm-corefighter)
+
 ;;;; Faces
 ;; TODO: Define faces
 (defface helm-corefighter-agenda-future-face
@@ -73,6 +78,17 @@
     :candidates #'helm-corefighter--agenda-candidates
     :action #'helm-corefighter--run-cursor))
 
+(defun helm-corefighter--make-module-source (module-cursor items)
+  "Build a Helm source from MODULE-CURSOR and ITEMS."
+  (helm-build-sync-source (corefighter-module-cursor-title module-cursor)
+    :candidates
+    (cl-loop for item being the elements of items using (index index)
+             collect (cons (corefighter-item-title item)
+                           (make-corefighter-cursor :module-cursor module-cursor
+                                                    :item item
+                                                    :index index)))
+    :action #'helm-corefighter--run-cursor))
+
 ;;;; Main
 
 ;;;###autoload
@@ -85,19 +101,15 @@ If REFRESH is non-nil, force refreshing items."
         helm-corefighter-target-window (selected-window))
   (helm :prompt "corefighter: "
         :sources
-        (let ((data (corefighter--get-data refresh)))
-          (mapcar
-           (lambda (section-data)
-             (let-alist section-data
-               (helm-build-sync-source .title
-                 :candidates
-                 (cl-loop for item being the elements of .items using (index index)
-                          collect (cons (corefighter-item-title item)
-                                        (make-corefighter-cursor :module-cursor .module
-                                                                 :item item
-                                                                 :index index)))
-                 :action #'helm-corefighter--run-cursor)))
-           data)))
+        (let* ((data (corefighter--get-data refresh))
+               (sources (mapcar
+                         (lambda (section-data)
+                           (let-alist section-data
+                             (helm-corefighter--make-module-source .module .items)))
+                         data)))
+          (if helm-corefighter-prepend-agenda
+              (cons helm-corefighter-agenda-source sources)
+            sources)))
   ;; If a persistent action opens a buffer but helm is aborted,
   ;; switch to the buffer
   (when helm-corefighter-action-buffer
@@ -128,15 +140,9 @@ is a subclass of `corefighter-module'."
         :sources
         (let ((title (oref module title))
               (items (corefighter-module-items module)))
-          (list (helm-build-sync-source title
-                  :candidates
-                  (lambda ()
-                    (cl-loop for item being the elements of items using (index index)
-                             collect (cons (corefighter-item-title item)
-                                           (make-corefighter-cursor :module-cursor module
-                                                                    :item item
-                                                                    :index index))))
-                  :action #'helm-corefighter--run-cursor)))))
+          (list (helm-corefighter--make-module-source
+                 (corefighter--module-cursor module)
+                 items)))))
 
 ;;;; Agenda
 
