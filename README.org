@@ -1,6 +1,6 @@
 #+title: corefighter.el
 
-[[https://travis-ci.org/akirak/corefighter.el.svg?branch=master]]
+[[https://travis-ci.org/akirak/corefighter.el][https://travis-ci.org/akirak/corefighter.el.svg?branch=master]]
 
 Core Fighter (=corefighter.el=) lets you choose the next action in Emacs. With properly configured modules, it fetches information from external sources and arranges tasks for you.
 
