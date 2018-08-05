@@ -40,6 +40,11 @@
 (require 'corefighter)
 ;;;; Variables
 
+(defgroup helm-corefighter nil
+  "Helm for Core Fighter."
+  :group 'corefighter
+  :prefix "helm-corefighter")
+
 (defvar helm-corefighter-action-buffer nil
   "Store the buffer selected by a (persistent) action.")
 
