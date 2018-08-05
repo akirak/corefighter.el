@@ -194,7 +194,9 @@ and this value is non-nil, visit the first item in all modues."
 
 ;;;;; Modules
 (defclass corefighter-module ()
-  ((title :type string :allocation :class))
+  ((title :initarg :title
+          :type string
+          :documentation "Title of the module."))
   "Abstract class of module.")
 
 (cl-defgeneric corefighter-module-items ((obj corefighter-module)
