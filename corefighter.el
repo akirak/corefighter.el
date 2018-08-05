@@ -237,7 +237,7 @@ and this value is non-nil, visit the first item in all modues."
 (defun corefighter-describe-module (class)
   (interactive
    (list (completing-read "Modules: "
-                          (eieio-class-children corefighter-module))))
+                          (eieio-class-children 'corefighter-module))))
   (describe-function (intern class)))
 
 ;;;; Navigation commands
