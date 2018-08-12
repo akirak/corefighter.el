@@ -562,6 +562,8 @@ This function returns a list of cursors from `corefighter-last-data'."
         truncate-lines t
         cursor-in-non-selected-windows nil)
   (page-break-lines-mode 1)
+  (setq-local show-help-function #'corefighter-sidebar--show-help)
+  (cursor-sensor-mode 1)
   (use-local-map corefighter-sidebar-map))
 
 (defun corefighter-sidebar--init (&optional force)
@@ -607,6 +609,7 @@ When FORCE is non-nil, force reloading items."
                                                 'mouse-face 'highlight
                                                 'help-echo (corefighter-item-description item)
                                                 'action #'corefighter-sidebar-follow-link
+                                                'cursor-sensor-functions '(corefighter-sidebar--item-sensor)
                                                 'corefighter-item-cursor cursor
                                                 'corefighter-item item)
                                     "\n")))
@@ -762,6 +765,17 @@ ACTION is returned.
   "Jump to the previous section."
   (interactive)
   (corefighter-sidebar--goto-previous-ov 'corefighter-module))
+
+(defun corefighter-sidebar--item-sensor (_window _oldpos dir)
+  "Cursor sensor function items in the sidebar."
+  (when (eq dir 'entered)
+    (when-let ((item (get-char-property (point) 'corefighter-item))
+               (description (corefighter-item-description item)))
+      (corefighter-sidebar--show-help description))))
+
+(defun corefighter-sidebar--show-help (msg)
+  (let ((message-log-max))
+    (message msg)))
 
 ;;;;; Sidebar window
 (defun corefighter-sidebar--window ()
