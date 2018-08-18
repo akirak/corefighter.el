@@ -45,10 +45,36 @@
   ;; A list of slot names and values
   slots
   ;; Optional string
-  title)
+  title
+  ;; Navigation action
+  navigate-action)
+
 (cl-defstruct corefighter-cursor module-cursor item index)
 
 (cl-defstruct corefighter-time seconds date-only)
+
+(cl-defstruct corefighter-action
+  ;; A function that takes a payload as the argument
+  function
+  ;; nil or "other-window"
+  ;;
+  ;; Because some commands (e.g. org-agenda) take care of windows by
+  ;; themselves, this workaround related to window management is needed.
+  ;;
+  ;; + If the action displays a buffer in other-window, the value should be
+  ;; \"other-window\".
+  ;; + Otherwise, action should switch to a buffer in the current window.
+  window)
+
+(cl-defun corefighter-make-action (func &key window)
+  "An alternative constructor for an action.
+
+You can use `make-corefighter-action' to construct a data of
+`corefighter-action' type, but the function field is mandatory,
+so it is tedious to write the field name every time.
+This function is a shorthand that allows you to define an action
+concisely."
+  (make-corefighter-action :function func :window window))
 
 ;;;; Variables
 ;; Declare variables to prevent undefined variable errors
@@ -183,11 +209,11 @@ and this value is non-nil, visit the first item in all modues."
   description
   ;; Key (string) to access the item
   key
-  ;; S-expression (not lambda but a list)
-  action
-  ;; Symbol or nil. See `corefighter--run-action-1'
-  action-window
-  ;; Emacs encoded time
+  ;; Metadata of the item (required)
+  payload
+  ;; Type tag. Usually a symbol (optional)
+  type
+  ;; corefighter-time
   due
   ;; Urgency (not implemented)
   urgency)
@@ -196,7 +222,10 @@ and this value is non-nil, visit the first item in all modues."
 (defclass corefighter-module ()
   ((title :initarg :title
           :type string
-          :documentation "Title of the module."))
+          :documentation "Title of the module.")
+   (navigate-action :initarg :navigate-action
+                    :type corefighter-action
+                    :documentation "Navigation action."))
   "Abstract class of module.")
 
 (cl-defgeneric corefighter-module-items ((obj corefighter-module)
@@ -257,11 +286,12 @@ If there is no item visited, visit the first item."
     (message "No remaining item")))
 
 (defun corefighter--run-cursor (cursor)
-  "Run the action of an item in CURSOR normally."
+  "Run the navigation action of an item in CURSOR normally."
   (let* ((item (corefighter-cursor-item cursor))
-         (window (corefighter-item-action-window item))
-         (action `(lambda () ,(corefighter-item-action item))))
-    (corefighter--run-action-1 action window cursor)))
+         (payload (corefighter-item-payload item))
+         (action (corefighter-module-sursor-navigate-action
+                  (corefighter-cursor-module-cursor item))))
+    (corefighter--run-action-2 action payload cursor)))
 
 (cl-defun corefighter--next-item (&key (allow-other-module t)
                                        (allow-first-item t))
@@ -381,8 +411,10 @@ If there is no item visited, visit the first item."
 (defun corefighter--compare-items (item1 item2)
   "Compare two objects of `corefighter-item' type."
   ;; Use the action to compare two items
-  (equal (corefighter-item-action item1)
-         (corefighter-item-action item2)))
+  (and (equal (corefighter-item-payload item1)
+              (corefighter-item-payload item2))
+       (eq (corefighter-item-type item1)
+           (corefighter-item-type item2))))
 
 ;;;;; Time
 (cl-defgeneric corefighter-encode-time (time &optional date-only))
@@ -437,7 +469,7 @@ If there is no item visited, visit the first item."
      86400))
 
 ;;;;; Cursors
-(defun corefighter--module-cursor (module)
+(cl-defmethod corefighter--module-cursor ((module corefighter-module))
   "Return the module cursor to a MODULE instance.
 
 MODULE must be an instance of `corefighter-module'.
@@ -445,6 +477,7 @@ MODULE must be an instance of `corefighter-module'.
   (make-corefighter-module-cursor
    :title (oref module title)
    :class (eieio-object-class-name module)
+   :navigate-action (oref module navigate-action)
    :slots (cl-loop for slot in (eieio-class-slots (eieio-object-class module))
                    collect (cons slot (slot-value module
                                                   (eieio-slot-descriptor-name slot))))))
@@ -645,31 +678,22 @@ If ARG is non-nil, force reloading items of each module."
   (corefighter-sidebar--init arg)
   (message nil))
 
-(defun corefighter--run-action-1 (action &optional action-window cursor)
-  "Run ACTION in ACTION-WINDOW with CURSOR.
+(defun corefighter--run-action-2 (action payload &optional cursor)
+  "Call ACTION on PAYLOAD with optional CURSOR.
 
-ACTION-WINDOW should denote how the action manages the window.
+ACTION is a `corefighter-action'.
 
-Because some commands (e.g. org-agenda) take care of windows by
-themselves, this workaround related to window management is needed.
-
-+ If the action displays a buffer in other-window, the value should be
-  \"other-window\".
-
-+ Otherwise, action should switch to a buffer in the current window.
+PAYLOAD depends on the item.
 
 CURSOR is an instance of `corefighter-cursor' type.  If it is
 specified, it is stored in `corefighter-last-item' variable so that
 `corefighter-next-item' command works.
 
-ACTION is returned.
-"
-  ;; TODO: Support magit properly. If `corefighter-target-window-setup'
-  ;; is 'only, the option doesn't take effect.
-  (pcase action-window
+ACTION is returned."
+  (pcase (corefighter-action-window action)
     ('other-window (corefighter--prepare-other-window))
     (_ (corefighter--prepare-target-window)))
-  (funcall action)
+  (funcall (corefighter-action-function action) payload)
   (setq corefighter-last-item cursor)
   (when cursor
     (push cursor corefighter-item-history))
@@ -694,10 +718,10 @@ ACTION is returned.
       ((pos (or pos (point)))
        (cursor (get-char-property pos 'corefighter-item-cursor))
        (item (corefighter-cursor-item cursor))
-       (action `(lambda () ,(corefighter-item-action item))))
-    (corefighter--run-action-1 action
-                               (corefighter-item-action-window item)
-                               cursor)))
+       (payload (corefighter-item-payload item))
+       (module (corefighter-cursor-module-cursor cursor))
+       (action (corefighter-module-cursor-navigate-action module)))
+    (corefighter--run-action-2 action payload cursor)))
 
 (defun corefighter-sidebar-preview ()
   "Preview a link at the position."
