@@ -824,7 +824,12 @@ Copied from `dired-sidebar-set-width', which was originally copied from
 ;;;; Preconfigured modules
 ;;;;; org-agenda
 (defclass corefighter-org-agenda (corefighter-module)
-  ((title :initform "Org Agenda")))
+  ((title :initform "Org Agenda")
+   (navigate-action
+    :initform (corefighter-make-action
+               (lambda (key)
+                 (let ((org-agenda-window-setup 'current-window))
+                   (org-agenda nil key)))))))
 
 (eval-when-compile
   (defvar org-agenda-custom-commands))
@@ -841,9 +846,8 @@ Copied from `dired-sidebar-set-width', which was originally copied from
                                    (format "%s %s"
                                            (symbol-name (car options))
                                            (nth 1 options)))
-                    :urgency nil
-                    :action `(let ((org-agenda-window-setup 'current-window))
-                               (org-agenda nil ,key)))))
+                    :payload key
+                    :urgency nil)))
 
 (provide 'corefighter)
 ;;; corefighter.el ends here
