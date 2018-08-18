@@ -124,8 +124,7 @@ If REFRESH is non-nil, force refreshing items."
   "Execute the item referenced by CURSOR."
   (let* ((item (corefighter-cursor-item cursor))
          (payload (corefighter-item-payload item))
-         (action (corefighter-module-cursor-navigate-action
-                  (corefighter-cursor-module-cursor cursor)))
+         (action (corefighter-cursor--navigate-action cursor))
          (corefighter-target-window-setup nil))
     (with-selected-window helm-corefighter-target-window
       (corefighter--run-action-2 action payload cursor))))

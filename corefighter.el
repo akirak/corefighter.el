@@ -293,8 +293,7 @@ If there is no item visited, visit the first item."
   "Run the navigation action of an item in CURSOR normally."
   (let* ((item (corefighter-cursor-item cursor))
          (payload (corefighter-item-payload item))
-         (action (corefighter-module-sursor-navigate-action
-                  (corefighter-cursor-module-cursor item))))
+         (action (corefighter-cursor--navigate-action cursor)))
     (corefighter--run-action-2 action payload cursor)))
 
 (cl-defun corefighter--next-item (&key (allow-other-module t)
@@ -420,6 +419,11 @@ If there is no item visited, visit the first item."
               (corefighter-item-payload item2))
        (eq (corefighter-item-type item1)
            (corefighter-item-type item2))))
+
+(defun corefighter-cursor--navigate-action (cursor)
+  "Get the navigation action of CURSOR."
+  (corefighter-module-cursor-navigate-action
+   (corefighter-cursor-module-cursor cursor)))
 
 ;;;;; Time
 (cl-defgeneric corefighter-encode-time (time &optional date-only))
@@ -728,8 +732,7 @@ ACTION is returned."
        (cursor (get-char-property pos 'corefighter-item-cursor))
        (item (corefighter-cursor-item cursor))
        (payload (corefighter-item-payload item))
-       (module (corefighter-cursor-module-cursor cursor))
-       (action (corefighter-module-cursor-navigate-action module)))
+       (action (corefighter-cursor--navigate-action cursor)))
     (corefighter--run-action-2 action payload cursor)))
 
 (defun corefighter-sidebar-preview ()
