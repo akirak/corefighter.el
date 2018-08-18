@@ -859,5 +859,38 @@ Copied from `dired-sidebar-set-width', which was originally copied from
                     :payload key
                     :urgency nil)))
 
+;;;;; Directory files
+(defclass corefighter-directory (corefighter-module)
+  ((title :initform "Directory")
+   (title-format :initform "Directory %s")
+   (directory :initarg :directory
+              :documentation "Directory to check.")
+   (navigate-action
+    :initform (corefighter-make-action
+               (lambda (fpath) (find-file fpath)))))
+  "Display the contents of a directory.")
+
+(cl-defmethod corefighter-module-title ((obj corefighter-directory))
+  (format (oref obj title-format) (oref obj directory)))
+
+(cl-defmethod corefighter-module-items ((obj corefighter-directory)
+                                        &optional _refresh)
+  (let ((directory (oref obj directory)))
+    (mapcar (lambda (record)
+              (let* ((name (car record))
+                     (path (expand-file-name name directory)))
+                (make-corefighter-item
+                 :title name
+                 :description
+                 ;; TODO: Support non-unix platforms
+                 (lambda ()
+                   (string-trim-right
+                    (shell-command-to-string
+                     (format "ls -l %s" (shell-quote-argument path)))))
+                 :payload path)))
+            (cl-remove-if
+             (lambda (record) (member (car record) '("." "..")))
+             (directory-files-and-attributes directory nil nil t)))))
+
 (provide 'corefighter)
 ;;; corefighter.el ends here
