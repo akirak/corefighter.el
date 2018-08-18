@@ -400,6 +400,7 @@ If there is no item visited, visit the first item."
 
 ;;;; Helper functions
 (defun corefighter--prepare-target-window ()
+  "Prepare the target window for an action."
   (cl-case corefighter-target-window-setup
     ('only (progn (let ((windows (corefighter--other-windows)))
                     (select-window (pop windows))
