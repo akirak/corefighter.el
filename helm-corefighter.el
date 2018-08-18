@@ -141,7 +141,7 @@ is a subclass of `corefighter-module'."
   (setq helm-corefighter-target-window (selected-window))
   (helm :prompt "corefighter: "
         :sources
-        (let ((title (oref module title))
+        (let ((title (corefighter-module-title module))
               (items (corefighter-module-items module)))
           (list (helm-corefighter--make-module-source
                  (corefighter--module-cursor module)

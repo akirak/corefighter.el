@@ -223,7 +223,10 @@ and this value is non-nil, visit the first item in all modues."
 (defclass corefighter-module ()
   ((title :initarg :title
           :type string
-          :documentation "Title of the module.")
+          :reader corefighter-module-title
+          :documentation "Title of the module.
+Alternatively, you can define a function to build the title
+by implementing `corefighter-module-title' method.")
    (navigate-action :initarg :navigate-action
                     :type corefighter-action
                     :documentation "Navigation action."))
@@ -476,7 +479,7 @@ If there is no item visited, visit the first item."
 MODULE must be an instance of `corefighter-module'.
  `corefighter-module-cursor' to the object."
   (make-corefighter-module-cursor
-   :title (oref module title)
+   :title (corefighter-module-title module)
    :class (eieio-object-class-name module)
    :navigate-action (oref module navigate-action)
    :slots (cl-loop for slot in (eieio-class-slots (eieio-object-class module))
@@ -666,7 +669,7 @@ If REFRESH is non-nil, force refreshing all modules."
   (setq corefighter-last-data
         (mapcar (lambda (module)
                   `((class . ,(eieio-object-class module))
-                    (title . ,(oref module title))
+                    (title . ,(corefighter-module-title module))
                     (module . ,(corefighter--module-cursor module))
                     (items . ,(corefighter-module-items module refresh))))
                 corefighter-module-instances)))
