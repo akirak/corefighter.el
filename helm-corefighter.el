@@ -123,14 +123,12 @@ If REFRESH is non-nil, force refreshing items."
 (defun helm-corefighter--run-cursor (cursor)
   "Execute the item referenced by CURSOR."
   (let* ((item (corefighter-cursor-item cursor))
-         (action `(lambda ()
-                    ,(corefighter-item-action item)
-                    ;; Store the buffer in case the helm session is aborted
-                    (setq helm-corefighter-action-buffer (current-buffer))))
-         (window (corefighter-item-action-window item))
+         (payload (corefighter-item-payload item))
+         (action (corefighter-module-cursor-navigate-action
+                  (corefighter-cursor-module-cursor cursor)))
          (corefighter-target-window-setup nil))
     (with-selected-window helm-corefighter-target-window
-      (corefighter--run-action-1 action window cursor))))
+      (corefighter--run-action-2 action payload cursor))))
 
 ;;;###autoload
 (defun helm-corefighter-run-module (module)
