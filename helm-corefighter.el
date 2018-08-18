@@ -3,8 +3,8 @@
 ;; Copyright (C) 2018 Akira Komamura
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
-;; Version: 1.0-pre
-;; Package-Requires: ((emacs "25.1") (helm "2.7.0") (corefighter "1.0"))
+;; Version: 0.2
+;; Package-Requires: ((emacs "25.1") (helm "2.7.0") (corefighter "0.2"))
 ;; URL: https://github.com/akirak/corefighter.el
 
 ;; This file is not part of GNU Emacs.

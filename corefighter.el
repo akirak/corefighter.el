@@ -3,7 +3,7 @@
 ;; Copyright (C) 2018 Akira Komamura
 
 ;; Author: Akira Komamura <akira.komamura@gmail.com>
-;; Version: 1.0-pre
+;; Version: 0.2
 ;; Package-Requires: ((emacs "25.1") (page-break-lines "0") (dash "2.12") (dash-functional "1.2.0") (ov "1.0.6"))
 ;; URL: https://github.com/akirak/corefighter.el
 
