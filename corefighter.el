@@ -205,7 +205,8 @@ and this value is non-nil, visit the first item in all modues."
 (cl-defstruct corefighter-item
   ;; String (required)
   title
-  ;; A short description string
+  ;; A short description. A string or a function that returns a string
+  ;; It usually consists of one line but can span multiple lines
   description
   ;; Key (string) to access the item
   key
@@ -640,7 +641,11 @@ When FORCE is non-nil, force reloading items."
                                                 'button t
                                                 'follow-link t
                                                 'mouse-face 'highlight
-                                                'help-echo (corefighter-item-description item)
+                                                'help-echo (if-let ((desc (corefighter-item-description item)))
+                                                               (cl-typecase desc
+                                                                 (string desc)
+                                                                 (function `(lambda (&rest args)
+                                                                              (funcall ,desc)))))
                                                 'action #'corefighter-sidebar-follow-link
                                                 'cursor-sensor-functions '(corefighter-sidebar--item-sensor)
                                                 'corefighter-item-cursor cursor
@@ -795,7 +800,9 @@ ACTION is returned."
   (when (eq dir 'entered)
     (when-let ((item (get-char-property (point) 'corefighter-item))
                (description (corefighter-item-description item)))
-      (corefighter-sidebar--show-help description))))
+      (corefighter-sidebar--show-help (cl-typecase description
+                                        (string description)
+                                        (function (funcall description)))))))
 
 (defun corefighter-sidebar--show-help (msg)
   (let ((message-log-max))
